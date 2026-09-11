@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Audio Transcriber</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #ffffff;
+
+            background:
+                radial-gradient(circle at 20% 20%, rgba(0, 140, 255, 0.18), transparent 35%),
+                radial-gradient(circle at 80% 80%, rgba(0, 89, 255, 0.15), transparent 35%),
+                #050b16;
+
+            overflow-x: hidden;
+        }
+
+        /* Animated background glow */
+        body::before {
+            content: "";
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: rgba(0, 153, 255, 0.08);
+            filter: blur(100px);
+            top: -150px;
+            left: -150px;
+            z-index: -1;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: rgba(0, 68, 255, 0.08);
+            filter: blur(100px);
+            bottom: -150px;
+            right: -150px;
+            z-index: -1;
+        }
+
+        /* Navigation */
+        nav {
+            height: 70px;
+            width: 100%;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 8%;
+
+            background: rgba(5, 12, 25, 0.75);
+            backdrop-filter: blur(15px);
+
+            border-bottom: 1px solid rgba(0, 153, 255, 0.2);
+
+            box-shadow: 0 0 25px rgba(0, 140, 255, 0.08);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .logo span {
+            color: #00aaff;
+            text-shadow: 0 0 12px #008cff;
+        }
+
+        nav .links {
+            display: flex;
+            gap: 35px;
+        }
+
+        nav a {
+            color: #b9c9dd;
+            text-decoration: none;
+            font-size: 15px;
+            transition: 0.3s;
+        }
+
+        nav a:hover {
+            color: #00aaff;
+            text-shadow: 0 0 10px #008cff;
+        }
+
+        /* Main container */
+        main {
+            min-height: calc(100vh - 70px);
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 50px 20px;
+        }
+
+        /* Upload card */
+        .card {
+            width: 100%;
+            max-width: 650px;
+
+            padding: 45px;
+
+            background: rgba(10, 20, 38, 0.75);
+            backdrop-filter: blur(20px);
+
+            border: 1px solid rgba(0, 153, 255, 0.25);
+            border-radius: 25px;
+
+            box-shadow:
+                0 0 40px rgba(0, 140, 255, 0.12),
+                inset 0 0 30px rgba(0, 140, 255, 0.03);
+
+            text-align: center;
+        }
+
+        /* Header */
+        .icon {
+            width: 75px;
+            height: 75px;
+
+            margin: 0 auto 20px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 20px;
+
+            font-size: 35px;
+
+            background: rgba(0, 153, 255, 0.08);
+
+            border: 1px solid rgba(0, 170, 255, 0.35);
+
+            box-shadow:
+                0 0 25px rgba(0, 153, 255, 0.25),
+                inset 0 0 20px rgba(0, 153, 255, 0.08);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            color: #91a4bd;
+            font-size: 15px;
+            margin-bottom: 35px;
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed rgba(0, 153, 255, 0.35);
+            border-radius: 18px;
+
+            padding: 35px 20px;
+
+            cursor: pointer;
+
+            transition: 0.3s;
+
+            background: rgba(0, 153, 255, 0.025);
+        }
+
+        .upload-area:hover {
+            border-color: #00aaff;
+
+            background: rgba(0, 153, 255, 0.06);
+
+            box-shadow:
+                0 0 25px rgba(0, 153, 255, 0.12),
+                inset 0 0 20px rgba(0, 153, 255, 0.04);
+        }
+
+        .upload-icon {
+            font-size: 42px;
+            margin-bottom: 15px;
+            color: #00aaff;
+
+            text-shadow:
+                0 0 10px #008cff,
+                0 0 25px rgba(0, 140, 255, 0.7);
+        }
+
+        .upload-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .upload-info {
+            font-size: 13px;
+            color: #71839c;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Selected file */
+        #fileName {
+            margin-top: 15px;
+            color: #00aaff;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        /* Language input */
+        .input-group {
+            margin-top: 25px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 14px;
+            color: #b9c9dd;
+        }
+
+        .language-input {
+            width: 100%;
+
+            padding: 15px 17px;
+
+            border-radius: 12px;
+
+            border: 1px solid rgba(0, 153, 255, 0.25);
+
+            background: rgba(0, 10, 25, 0.7);
+
+            color: white;
+
+            outline: none;
+
+            font-size: 15px;
+
+            transition: 0.3s;
+        }
+
+        .language-input::placeholder {
+            color: #53677f;
+        }
+
+        .language-input:focus {
+            border-color: #00aaff;
+
+            box-shadow:
+                0 0 15px rgba(0, 153, 255, 0.2);
+
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+
+            margin-top: 28px;
+
+            padding: 16px;
+
+            border: none;
+            border-radius: 12px;
+
+            background: linear-gradient(90deg,
+                    #006eff,
+                    #00aaff);
+
+            color: white;
+
+            font-size: 16px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: 0.3s;
+
+            box-shadow:
+                0 0 20px rgba(0, 140, 255, 0.35);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 0 25px rgba(0, 153, 255, 0.65),
+                0 0 50px rgba(0, 100, 255, 0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Footer text */
+        .footer-text {
+            margin-top: 25px;
+
+            color: #53677f;
+
+            font-size: 12px;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+
+            nav {
+                padding: 0 20px;
+            }
+
+            nav .links {
+                gap: 15px;
+            }
+
+            nav a {
+                font-size: 13px;
+            }
+
+            .card {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav>
+
+        <div class="logo">
+            AI<span>Transcriber</span>
+        </div>
+
+        <div class="links">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+        </div>
+
+    </nav>
+
+
+    <!-- Main -->
+    <main>
+
+        <div class="card">
+
+            <div class="icon">
+                🎙️
+            </div>
+
+            <h1>AI Audio Transcriber</h1>
+
+            <p class="subtitle">
+                Upload your audio and convert speech into text using AI.
+            </p>
+
+
+            <form method="post" enctype="multipart/form-data">
+
+                <!-- Upload -->
+                <label class="upload-area" for="audioFile">
+
+                    <div class="upload-icon">
+                        ↑
+                    </div>
+
+                    <div class="upload-title">
+                        Upload your audio file
+                    </div>
+
+                    <div class="upload-info">
+                        Click to browse or select an audio file
+                    </div>
+
+                    <div class="upload-info">
+                        MP3, WAV, OGG, M4A supported
+                    </div>
+
+                    <input type="file" id="audioFile" name="file" accept="audio/*" required>
+
+                </label>
+
+                <div id="fileName"></div>
+
+
+                <!-- Language -->
+                <div class="input-group">
+
+                    <label for="language">
+                        Audio Language
+                    </label>
+
+                    <input class="language-input" type="text" id="language" name="language"
+                        placeholder="Example: English">
+
+                </div>
+
+
+                <!-- Submit -->
+                <button class="submit-btn" type="submit">
+                    ✨ Transcribe Audio
+                </button>
+
+            </form>
+
+
+            <div class="footer-text">
+                Powered by AI Speech Recognition
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const audioFile = document.getElementById("audioFile");
+        const fileName = document.getElementById("fileName");
+
+        audioFile.addEventListener("change", function () {
+
+            if (this.files.length > 0) {
+
+                fileName.textContent =
+                    "Selected: " + this.files[0].name;
+
+            } else {
+
+                fileName.textContent = "";
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
+</html>
