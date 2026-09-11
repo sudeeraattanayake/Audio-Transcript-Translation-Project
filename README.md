@@ -61,7 +61,7 @@ The application includes a simple web interface for interacting with the audio t
   <img src="docs/ui.png" alt="Audio Transcript Translation User Interface" width="850">
 </p>
 
-> **Note:** Add your UI screenshot to the project at `docs/ui.png`.
+
 
 ---
 
